@@ -1,0 +1,25 @@
+{
+    "exp_name": "DQN_CartPole",
+    "seed": 42,
+    "qnet_config": {
+        "hidden_sizes": [
+            128,
+            128
+        ],
+        "device": "cpu"
+    },
+    "batch_size": 64,
+    "n_episodes": 1000,
+    "gamma": 0.95,
+    "learning_rate": 0.001,
+    "epsilon_start": 1.0,
+    "epsilon_decay": 0.995,
+    "epsilon_end": 0.01,
+    "device": "cpu",
+    "env_name": "CartPole-v1",
+    "buffer_size": 2000,
+    "stored_dir": "checkpoints/dqn",
+    "ckpt_interval": 50,
+    "ckpt_path": "dqn_cartpole.pth",
+    "use_prioritized_replay": true
+}

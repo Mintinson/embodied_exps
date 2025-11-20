@@ -1,0 +1,9 @@
+2025-11-20 21:08:45,395 — DQN_CartPole — [INFO] — recorder.py:21 — Experiment configuration: {'exp_name': 'DQN_CartPole', 'seed': 42, 'qnet_config': {'hidden_sizes': (128, 128), 'device': 'cpu'}, 'batch_size': 64, 'n_episodes': 5, 'gamma': 0.95, 'learning_rate': 0.001, 'epsilon_start': 1.0, 'epsilon_decay': 0.995, 'epsilon_end': 0.01, 'device': 'cpu', 'env_name': 'CartPole-v1', 'buffer_size': 2000, 'stored_dir': 'checkpoints/dqn', 'ckpt_interval': 50, 'use_prioritized_replay': True}
+2025-11-20 21:08:45,395 — DQN_CartPole — [INFO] — trainer.py:30 — Starting training CartPole-v1
+2025-11-20 21:08:45,396 — DQN_CartPole — [INFO] — trainer.py:78 — Episode: 1/5, Score: 18.00, Steps: 29, Epsilon: 0.995
+2025-11-20 21:08:45,397 — DQN_CartPole — [INFO] — trainer.py:78 — Episode: 2/5, Score: 14.00, Steps: 25, Epsilon: 0.990
+2025-11-20 21:08:45,430 — DQN_CartPole — [INFO] — trainer.py:78 — Episode: 3/5, Score: 10.00, Steps: 21, Epsilon: 0.985
+2025-11-20 21:08:45,466 — DQN_CartPole — [INFO] — trainer.py:78 — Episode: 4/5, Score: 6.00, Steps: 17, Epsilon: 0.980
+2025-11-20 21:08:45,502 — DQN_CartPole — [INFO] — trainer.py:78 — Episode: 5/5, Score: 6.00, Steps: 17, Epsilon: 0.975
+2025-11-20 21:08:45,503 — DQN_CartPole — [INFO] — trainer.py:91 — Training finished.
+2025-11-20 21:08:45,507 — DQN_CartPole — [INFO] — recorder.py:34 — Saved model to checkpoints\dqn\20251120-2108\model_last.pth

@@ -1,0 +1,4 @@
+{
+    "ruff.configurationPreference": "filesystemFirst",
+    "python.analysis.typeCheckingMode": "standard"
+}
