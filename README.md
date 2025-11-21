@@ -42,6 +42,8 @@ pip install -r requirements.txt
 
 ## 快速开始
 
+> 注意：如果不是使用 `uv` 管理项目的话，将下述命令中的 `uv run` 替换成 `python` 即可。
+
 ### 训练离散控制算法（DQN 系列）
 
 ```bash
