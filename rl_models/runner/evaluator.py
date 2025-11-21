@@ -54,7 +54,9 @@ class OffPolicyEvaluator:
                 state = next_state
                 total_reward += float(reward)
 
-            self.recorder.logger.info(f"Episode: {e + 1}, Score: {total_reward:.2f}.")
+            self.recorder.logger.info(
+                f"Episode: {e + 1}/{self.config.num_tests}, Score: {total_reward:.2f}."
+            )
             if total_reward > best_rewards:
                 best_rewards = total_reward
                 best_frames = frames

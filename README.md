@@ -1,285 +1,350 @@
 # Embodied RL Experiments
 
-A modular and extensible reinforcement learning framework for DQN-based algorithms.
+一个模块化且可扩展的强化学习框架，支持离散和连续控制的多种深度强化学习算法。
 
-## Features
+## 特性
 
-- 🎯 **Modular Architecture**: Easily swap algorithms, buffers, and exploration strategies
-- 🔌 **Pluggable Components**: Mix and match trainers, replay buffers, and exploration methods
-- 🚀 **Multiple Algorithms**: DQN, Double DQN, easy to extend to Dueling DQN, Rainbow, etc.
-- 📊 **Built-in Visualization**: Training progress plotting
-- ⚙️ **Configuration Management**: YAML configs with draccus
-- ✅ **Type Safe**: Comprehensive type hints throughout
-- 🧪 **Testable**: Dependency injection enables easy unit testing
+- 🎯 **模块化架构**: 轻松切换算法、缓冲区和探索策略
+- 🔌 **可插拔组件**: 混合搭配训练器、回放缓冲区和探索方法
+- 🚀 **多种算法**: DQN、Double DQN、DDPG、TD3，易于扩展到 Dueling DQN、Rainbow、SAC、PPO 等
+- 📊 **内置可视化**: 训练进度图表
+- ⚙️ **配置管理**: 使用 draccus 进行配置管理
+- ✅ **类型安全**: 全面的类型提示
+- 🧪 **可测试**: 依赖注入使单元测试变得简单
 
-## Installation
+## 安装
 
-This project uses `uv` for dependency management:
+本项目使用 `uv` 进行依赖管理：
 
 ```bash
-# Install uv if you haven't already
+# 如果尚未安装 uv，先安装
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies
+# 安装依赖
 uv sync
 
-# Install development dependencies (includes ruff)
+# 安装开发依赖（包括 ruff）
 uv sync --dev
 ```
 
-We also support `conda` for dependency management:
+也支持使用 `conda` 管理依赖：
 
 ```bash
 conda env create -f environment.yml
 conda activate embodied-exps
 ```
 
-Or just simply use `pip`:
+或者直接使用 `pip`：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## 快速开始
 
-### Train DQN on CartPole
-
-```bash
-# With default parameters
-uv run python scripts/train_dqn_cartpole.py
-
-# With custom parameters
-uv run python scripts/train_dqn_cartpole.py --n_episodes 2000 --gamma 0.99
-
-# With config file
-uv run python scripts/train_dqn_cartpole.py --config configs/dqn_cartpole.yaml
-```
-
-### Train Double DQN
+### 训练离散控制算法（DQN 系列）
 
 ```bash
-uv run python scripts/train_ddqn_cartpole.py
+# 训练 DQN（CartPole 环境）
+uv run scripts/train_dqn.py
+
+# 使用自定义参数
+uv run scripts/train_dqn.py --n_episodes 2000 --gamma 0.99
+
+# 训练 Double DQN
+uv run scripts/train_ddqn.py
+
+# 测试训练好的模型
+uv run scripts/test_dqn.py --config_path checkpoints/dqn/<timestamp>/config.json --ckpt_path model_ep800.pth
 ```
 
-## Architecture
+### 训练连续控制算法（DDPG/TD3）
 
-The framework is built on three core abstractions:
+```bash
+# 训练 DDPG（AntBulletEnv 环境）
+uv run scripts/train_ddpg.py
 
-1. **Trainers** (`BaseTrainer`): Implement learning algorithms (DQN, DDQN, etc.)
-2. **Replay Buffers** (`BaseReplayBuffer`): Manage experience storage and sampling
-3. **Exploration Strategies** (`BaseExplorationStrategy`): Control action selection
+# 训练 TD3（Pendulum 环境）
+uv run scripts/train_td3.py --env_name Pendulum-v1 --n_episodes 100
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
+# 测试训练好的模型
+uv run scripts/test_td3.py --config_path checkpoints/td3/<timestamp>/config.json
+```
 
-## Project Structure
+## 架构
+
+框架建立在以下核心抽象之上：
+
+1. **智能体** (`BaseAgent`): 实现学习算法（DQN、DDQN、DDPG、TD3 等）
+2. **回放缓冲区** (`BaseBuffer`): 管理经验存储和采样
+3. **探索策略** (`BaseExplorationStrategy`): 控制动作选择
+4. **训练器** (`OffPolicyTrainer`): 通用的离策略训练循环
+5. **评估器** (`OffPolicyEvaluator`): 模型评估和可视化
+
+## 项目结构
 
 ```
 rl_models/
-├── base.py                    # Abstract base classes
-├── dqn_trainner.py           # DQN implementation
-├── ddqn_trainer.py           # Double DQN implementation
-├── exploration.py            # Exploration strategies
+├── core/
+│   └── base.py                   # 抽象基类（BaseAgent, BaseBuffer, BaseExplorationStrategy）
+├── algorithms/
+│   ├── dqn.py                    # DQN 实现
+│   ├── ddqn.py                   # Double DQN 实现
+│   ├── ddpg.py                   # DDPG 实现
+│   └── td3.py                    # TD3 实现
+├── common/
+│   ├── replay_buffer.py          # 回放缓冲区实现（普通/优先级）
+│   ├── sum_tree.py               # 优先级回放使用的 SumTree
+│   ├── logger.py                 # 日志工具
+│   └── utils.py                  # 工具函数
+├── configs/
+│   ├── common_config.py          # 通用配置
+│   ├── dqn_config.py             # DQN 配置
+│   ├── ddqn_config.py            # DDQN 配置
+│   ├── ddpg_config.py            # DDPG 配置
+│   └── td3_config.py             # TD3 配置
 ├── nets/
-│   └── dqn_models.py        # Network architectures
-└── utils/
-    ├── replay_buffer.py     # Replay buffer implementations
-    └── visualizer.py        # Visualization tools
+│   ├── dqn_models.py             # DQN 网络架构
+│   ├── dqpg_models.py            # DDPG/TD3 网络架构
+│   └── mlp.py                    # 通用 MLP 构建器
+├── runner/
+│   ├── trainer.py                # 通用离策略训练器
+│   ├── evaluator.py              # 模型评估器
+│   └── recorder.py               # 日志记录和模型保存
+└── exploration.py                # 探索策略（Epsilon-Greedy, Gaussian Noise 等）
 
 scripts/
-├── train_dqn_cartpole.py    # DQN training script
-└── train_ddqn_cartpole.py   # Double DQN training script
+├── train_dqn.py                  # DQN 训练脚本
+├── train_ddqn.py                 # Double DQN 训练脚本
+├── train_ddpg.py                 # DDPG 训练脚本
+├── train_td3.py                  # TD3 训练脚本
+├── test_dqn.py                   # DQN 测试脚本
+├── test_ddqn.py                  # Double DQN 测试脚本
+├── test_ddpg.py                  # DDPG 测试脚本
+└── test_td3.py                   # TD3 测试脚本
 
-configs/
-├── dqn_cartpole.yaml        # DQN configuration
-└── ddqn_cartpole.yaml       # DDQN configuration
+checkpoints/                      # 模型检查点和日志
 ```
 
-## Usage Examples
+## 使用示例
 
-### Basic Training Loop
+### 基本训练流程
 
 ```python
-from rl_models import DQNTrainer, EpsilonGreedyStrategy
-from rl_models.nets import DQN
-from rl_models.utils import ReplayBuffer
+import draccus
+from rl_models.algorithms import DQN
+from rl_models.common.replay_buffer import ReplayBuffer
+from rl_models.configs import DQNConfig
+from rl_models.envs import make_env
+from rl_models.exploration import EpsilonGreedyStrategy
+from rl_models.runner.trainer import OffPolicyTrainer
 
-# Setup components
-model = DQN(state_size=4, action_size=2)
-buffer = ReplayBuffer(max_size=10000)
-exploration = EpsilonGreedyStrategy(epsilon_start=1.0, epsilon_end=0.01)
+# 解析配置
+config = draccus.parse(DQNConfig)
 
-trainer = DQNTrainer(
-    net=model,
-    optimizer=optimizer,
+# 创建环境
+env = make_env(config.env_name)
+
+# 创建智能体
+state_dim = env.observation_space.shape[0]
+action_dim = env.action_space.n
+agent = DQN(state_dim, action_dim, config)
+
+# 创建回放缓冲区
+buffer = ReplayBuffer(max_size=config.buffer_size)
+
+# 创建探索策略
+exploration_strategy = EpsilonGreedyStrategy(
+    epsilon_start=config.epsilon_start,
+    epsilon_end=config.epsilon_end,
+    epsilon_decay=config.epsilon_decay,
+)
+
+# 创建训练器
+trainer = OffPolicyTrainer(
+    agent=agent,
+    env=env,
     buffer=buffer,
-    batch_size=64,
-    gamma=0.99
+    exploration_strategy=exploration_strategy,
+    config=config,
 )
 
-# Training loop
-for episode in range(n_episodes):
-    state = env.reset()
-    done = False
-    
-    while not done:
-        # Select action with exploration
-        action = exploration.select_action(
-            state, trainer.sample_action, env.action_space
-        )
-        
-        next_state, reward, done, _ = env.step(action)
-        buffer.store(state, action, reward, next_state, done)
-        
-        # Learn from experience
-        metrics = trainer.learn()
-        state = next_state
-    
-    exploration.update()
+# 开始训练
+trainer.train()
 ```
 
-### Using Different Components
+### 使用不同的组件
 
 ```python
-# Use prioritized replay buffer
-from rl_models.utils import PrioritizedReplayBuffer
-buffer = PrioritizedReplayBuffer(max_size=10000, alpha=0.6)
+# 使用优先级回放缓冲区
+from rl_models.common.replay_buffer import PrioritizedReplayBuffer
+buffer = PrioritizedReplayBuffer(max_size=config.buffer_size)
 
-# Use Double DQN
-from rl_models import DoubleDQNTrainer
-trainer = DoubleDQNTrainer(
-    net=online_net,
-    target_net=target_net,
-    optimizer=optimizer,
-    buffer=buffer
+# 使用 TD3 算法（连续控制）
+from rl_models.algorithms import TD3
+from rl_models.exploration import GaussianNoiseStrategy
+
+agent = TD3(state_dim, action_dim, max_action, config)
+exploration_strategy = GaussianNoiseStrategy(
+    action_dim=action_dim,
+    max_action=max_action,
+    sigma=0.1,
 )
 
-# Use greedy strategy (for evaluation)
-from rl_models import GreedyStrategy
+# 使用贪婪策略（用于评估）
+from rl_models.exploration import GreedyStrategy
 exploration = GreedyStrategy()
 ```
 
-## Extending the Framework
+## 扩展框架
 
-### Add a New Algorithm
+### 添加新算法
 
 ```python
-from rl_models.base import BaseTrainer
+from rl_models.core.base import BaseAgent
 
-class MyNewAlgorithm(BaseTrainer):
-    def sample_action(self, state):
-        # Action selection logic
+class MyNewAlgorithm(BaseAgent):
+    def __init__(self, state_dim: int, action_dim: int, config):
+        super().__init__(config)
+        # 初始化网络、优化器等
+    
+    def act(self, state, deterministic=False):
+        # 动作选择逻辑
         pass
     
-    def learn(self):
-        # Learning algorithm
+    def update(self, batch):
+        # 学习算法
         return {"loss": loss_value}
+    
+    def state_dict(self):
+        # 返回需要保存的参数
+        pass
+    
+    def load_state_dict(self, state_dict):
+        # 加载参数
+        pass
 ```
 
-### Add a New Exploration Strategy
+### 添加新探索策略
 
 ```python
-from rl_models.base import BaseExplorationStrategy
+from rl_models.core.base import BaseExplorationStrategy
 
 class BoltzmannExploration(BaseExplorationStrategy):
+    def __init__(self, temperature=1.0):
+        self.temperature = temperature
+    
     def select_action(self, state, action_selector, env_action_space):
-        # Softmax-based action selection
+        # 基于 Softmax 的动作选择
         pass
     
     def update(self):
-        # Update temperature
+        # 更新温度参数
         pass
 ```
 
-See [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for detailed refactoring rationale and migration guide.
+## 开发
 
-## Development
-
-### Code Quality
+### 代码质量
 
 ```bash
-# Format code
+# 格式化代码
 uv run ruff format .
 
-# Lint code
+# 代码检查
 uv run ruff check .
 
-# Fix auto-fixable issues
+# 自动修复可修复的问题
 uv run ruff check . --fix
 ```
 
-### Running Tests
+## 配置
 
-```bash
-# Coming soon: unit tests
-uv run pytest
+所有训练参数可以通过以下方式配置：
+
+1. **命令行参数**: `uv run script.py --n_episodes 2000 --gamma 0.99`
+3. **配置文件**： `uv run script.py --config_path your_cfg.json` 也可以是 `.yaml` 文件  
+2. **Python dataclass**: 在 `rl_models/configs/` 中修改对应的配置类
+
+配置示例（DQN）：
+
+```python
+@dataclass
+class DQNConfig(CommonConfig):
+    exp_name: str = "DQN_CartPole"
+    env_name: str = "CartPole-v1"
+    batch_size: int = 64
+    n_episodes: int = 1000
+    gamma: float = 0.95
+    learning_rate: float = 0.001
+    epsilon_start: float = 1.0
+    epsilon_decay: float = 0.995
+    epsilon_end: float = 0.01
+    buffer_size: int = 2000
+    use_prioritized_replay: bool = True
 ```
 
-## Configuration
+## 检查点
 
-All training parameters can be configured via:
-
-1. **Command line arguments**: `--n_episodes 2000`
-2. **YAML config files**: `--config configs/my_config.yaml`
-3. **Python dataclass**: Modify `DQNConfig` in scripts
-
-Example config (`configs/dqn_cartpole.yaml`):
-
-```yaml
-batch_size: 64
-n_episodes: 1000
-gamma: 0.95
-learning_rate: 0.001
-epsilon_start: 1.0
-epsilon_decay: 0.995
-epsilon_end: 0.01
-```
-
-## Checkpoints
-
-Models are automatically saved to `checkpoints/` after training:
+训练后模型会自动保存到 `checkpoints/` 目录：
 
 ```bash
 checkpoints/
-├── dqn_cartpole.pth
-└── ddqn_cartpole.pth
+├── dqn/
+│   └── 20251121-1642/
+│       ├── config.json
+│       ├── model_ep800.pth
+│       └── model_last.pth
+├── ddqn/
+├── ddpg/
+└── td3/
+    └── 20251121-1929/
+        ├── config.json
+        └── model_last.pth
 ```
 
-Load a saved model:
+检验模型：
 
-```python
-from pathlib import Path
-trainer.load(Path("checkpoints/dqn_cartpole.pth"))
+```bash
+# if --ckpt_path doesn't specify, it will choose model_last.pth in the config_path directory
+uv run scripts/test_xxx.py --config_path your_json_yaml_path --ckpt_path your_ckpt_path
 ```
 
-## Requirements
+## 支持的算法
+
+### 离散控制（Discrete Action Space）
+- **DQN** (Deep Q-Network): 基础的深度 Q 学习算法
+- **Double DQN**: 使用双网络减少 Q 值高估
+
+### 连续控制（Continuous Action Space）
+- **DDPG** (Deep Deterministic Policy Gradient): 确定性策略梯度算法
+- **TD3** (Twin Delayed DDPG): 改进的 DDPG，使用双 Critic 和延迟策略更新
+
+### 探索策略
+- **Epsilon-Greedy**: 用于离散动作空间（DQN 系列）
+- **Gaussian Noise**: 用于连续动作空间（DDPG/TD3）
+- **Dummy Strategy**: 不添加探索噪声（用于 DDPG 的 OU Noise 内置探索）
+
+### 回放缓冲区
+- **ReplayBuffer**: 均匀采样的经验回放
+- **PrioritizedReplayBuffer**: 基于 TD 误差的优先级回放
+
+## 依赖要求
 
 - Python ≥ 3.10
-- PyTorch ≥ 2.0
-- Gymnasium (with classic control environments)
-- NumPy
-- Matplotlib
+- PyTorch ≥ 2.9
+- Gymnasium ≥ 1.2
+- NumPy ≥ 2.2
+- Matplotlib ≥ 3.10
+- Draccus ≥ 0.11（配置管理）
+- PyBullet（用于机器人环境，可选）
 
-See `pyproject.toml` for complete dependencies.
+完整依赖列表见 `pyproject.toml`。
 
-## License
-
-MIT License
-
-## Contributing
-
-Contributions are welcome! The modular architecture makes it easy to add:
-- New RL algorithms (Dueling DQN, Rainbow, etc.)
-- New replay buffer variants (HER, n-step, etc.)
-- New exploration strategies
-- Additional environments
-- Improved visualizations
-
-## References
+## 参考文献
 
 - [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/abs/1312.5602) (DQN)
 - [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/abs/1509.06461) (DDQN)
 - [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)
-
-## Acknowledgments
-
-Built with modern Python practices and design patterns for research and production use.
+- [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971) (DDPG)
+- [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477) (TD3)
