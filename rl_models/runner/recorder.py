@@ -25,7 +25,9 @@ class Recorder:
             # self.target_dir = Path(config.stored_dir) / "evaluation"
         log_name = "training" if is_training else "evaluation"
         self.logger = get_logger(config.exp_name, self.target_dir / f"{log_name}.log")
-        self.logger.info(f"Experiment configuration: {dataclasses.asdict(config)}")
+        self.logger.info(
+            f"Experiment configuration: {json.dumps(dataclasses.asdict(config), indent=4)}"
+        )
 
     # def start_train(self) -> None:
 
@@ -59,7 +61,10 @@ class Recorder:
         plt.plot(self._smooth(rewards), label="smoothed")
         plt.xlabel("Episode")
         plt.ylabel("Total Reward")
-        plt.title("Training Rewards" if is_training else "Evaluation Rewards")
+        plt.title(
+            ("Training Rewards" if is_training else "Evaluation Rewards")
+            + f" - {self.config.exp_name}"
+        )
         plt.savefig(self.target_dir / "rewards.png")
         plt.legend()
         plt.show()

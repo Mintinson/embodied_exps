@@ -31,7 +31,8 @@ class OffPolicyTrainer:
 
         rewards = []
         for e in range(self.config.n_episodes):
-            state, _ = self.env.reset()
+            episode_seed = self.config.seed + e
+            state, _ = self.env.reset(seed=episode_seed)
             state = np.array(state, dtype=np.float32)
             total_reward = 0
             done = False

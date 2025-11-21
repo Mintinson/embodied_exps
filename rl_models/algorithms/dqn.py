@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch import optim
 
 from rl_models.common import convert_to_tensor
+from rl_models.common.utils import LossFunction
 from rl_models.configs.dqn_config import DQNConfig
 from rl_models.core.base import BaseAgent
 from rl_models.nets.mlp import build_mlp
@@ -18,7 +19,7 @@ class DQN(BaseAgent):
         state_dim: int,
         action_dim: int,
         config: DQNConfig,
-        criterion: Callable | None = None,
+        criterion: LossFunction | None = None,
     ):
         super().__init__(config)
         self.config: DQNConfig = config
@@ -47,8 +48,13 @@ class DQN(BaseAgent):
 
         return int(q_values.argmax().item())
 
-    def update(self, batch: Any) -> dict[str, float]:
-        states, actions, rewards, next_states, dones = batch[:5]
+    def update(self, batch: Any) -> dict[str, Any]:
+        if len(batch) == 7:  #  PrioritizedReplayBuffer
+            states, actions, rewards, next_states, dones, indices, is_weight = batch
+            is_weight = convert_to_tensor(is_weight, device=self.device)
+        else:  #  ReplayBuffer
+            states, actions, rewards, next_states, dones = batch
+            is_weight = 1.0
 
         states = convert_to_tensor(states, device=self.device)
         actions = convert_to_tensor(actions, torch.int64, device=self.device)
@@ -66,13 +72,19 @@ class DQN(BaseAgent):
             next_q_value = next_q_values.max(1)[0]
             expected_q_value = rewards + self.gamma * next_q_value * (~dones)
 
-        loss = self.criterion(q_value, expected_q_value)
+        td_errors = torch.abs(q_value - expected_q_value).detach().cpu().numpy()
+        elementwise_loss = self.criterion(q_value, expected_q_value, reduction="none")
+        loss = (elementwise_loss * is_weight).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        return {"loss": loss.item(), "q_value_mean": q_value.mean().item()}
+        return {
+            "loss": loss.item(),
+            "q_value_mean": q_value.mean().item(),
+            "td_errors": td_errors,
+        }
 
     def state_dict(self) -> dict:
         return self.qnet.state_dict()

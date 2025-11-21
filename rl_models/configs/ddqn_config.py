@@ -9,4 +9,5 @@ class DdoubleDQNConfig(DQNConfig):
 
     exp_name: str = "DDQN_CartPole"  # experiment name
     stored_dir: str = "checkpoints/ddqn"  # directory to store checkpoints, logs, etc.
-    update_target_freq: int = 10  # target network update frequency
+    update_target_freq: int = 100  # target network update frequency
+    use_prioritized_replay: bool = False  # whether to use prioritized experience replay

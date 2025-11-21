@@ -28,7 +28,6 @@ class CommonConfig:
     epsilon_end: float = 0.01  # minimum exploration rate
     buffer_size: int = 2000  # replay buffer size
     ckpt_interval: int = 50  # stored checkpoint interval
-    use_prioritized_replay: bool = True  # whether to use prioritized experience replay
 
     ckpt_path: str = "model_last.pth"  # checkpoint path for evaluation
     num_tests: int = 50  # number of test episodes

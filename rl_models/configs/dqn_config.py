@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from rl_models.configs.common_config import CommonConfig
@@ -18,3 +17,4 @@ class DQNConfig(CommonConfig):
     env_name: str = "CartPole-v1"  # environment name
     stored_dir: str = "checkpoints/dqn"  # directory to store checkpoints, logs, etc.
     qnet_config: QNetConfig = field(default_factory=QNetConfig)  # Q-network configuration
+    use_prioritized_replay: bool = False  # whether to use prioritized experience replay

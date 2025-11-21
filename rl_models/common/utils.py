@@ -1,7 +1,14 @@
 import random
+from typing import Protocol
 
 import numpy as np
 import torch
+
+
+class LossFunction(Protocol):
+    def __call__(
+        self, input: torch.Tensor, target: torch.Tensor, *, reduction: str = "mean"
+    ) -> torch.Tensor: ...
 
 
 def convert_to_tensor(

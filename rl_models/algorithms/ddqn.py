@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 import torch
@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch import optim
 
 from rl_models.common import convert_to_tensor
+from rl_models.common.utils import LossFunction
 from rl_models.configs.ddqn_config import DdoubleDQNConfig
 from rl_models.core.base import BaseAgent
 from rl_models.nets.mlp import build_mlp
@@ -18,7 +19,7 @@ class DDQN(BaseAgent):
         state_dim: int,
         action_dim: int,
         config: DdoubleDQNConfig,
-        criterion: Callable | None = None,
+        criterion: LossFunction | None = None,
     ):
         super().__init__(config)
         self.config: DdoubleDQNConfig = config
@@ -57,8 +58,13 @@ class DDQN(BaseAgent):
 
         return int(q_values.argmax().item())
 
-    def update(self, batch: Any) -> dict[str, float]:
-        states, actions, rewards, next_states, dones = batch[:5]
+    def update(self, batch: Any) -> dict[str, Any]:
+        if len(batch) == 7:  #  PrioritizedReplayBuffer
+            states, actions, rewards, next_states, dones, indices, is_weight = batch
+            is_weight = convert_to_tensor(is_weight, device=self.device)
+        else:  #  ReplayBuffer
+            states, actions, rewards, next_states, dones = batch
+            is_weight = torch.ones_like(rewards)
 
         states = convert_to_tensor(states, device=self.device)
         actions = convert_to_tensor(actions, torch.int64, device=self.device)
@@ -77,7 +83,11 @@ class DDQN(BaseAgent):
             next_q_value = next_q_values.gather(1, next_actions).squeeze(1)
             expected_q_value = rewards + self.gamma * next_q_value * (~dones)
 
-        loss = self.criterion(q_value, expected_q_value)
+        td_errors = torch.abs(q_value - expected_q_value).detach().cpu().numpy()
+
+        elementwise_loss = self.criterion(q_value, expected_q_value, reduction="none")
+        loss = (elementwise_loss * is_weight).mean()
+        # loss = self.criterion(q_value, expected_q_value)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -87,7 +97,11 @@ class DDQN(BaseAgent):
         if self.update_counter % self.target_update_freq == 0:
             self.target_qnet.load_state_dict(self.eval_qnet.state_dict())
 
-        return {"loss": loss.item(), "q_value_mean": q_value.mean().item()}
+        return {
+            "loss": loss.item(),
+            "q_value_mean": q_value.mean().item(),
+            "td_errors": td_errors,
+        }
 
     def load_state_dict(self, state_dict: dict) -> None:
         self.eval_qnet.load_state_dict(state_dict["eval_qnet"])
