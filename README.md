@@ -27,6 +27,19 @@ uv sync
 uv sync --dev
 ```
 
+We also support `conda` for dependency management:
+
+```bash
+conda env create -f environment.yml
+conda activate embodied-exps
+```
+
+Or just simply use `pip`:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Quick Start
 
 ### Train DQN on CartPole
@@ -207,7 +220,7 @@ All training parameters can be configured via:
 
 1. **Command line arguments**: `--n_episodes 2000`
 2. **YAML config files**: `--config configs/my_config.yaml`
-3. **Python dataclass**: Modify `TrainDQNConfig` in scripts
+3. **Python dataclass**: Modify `DQNConfig` in scripts
 
 Example config (`configs/dqn_cartpole.yaml`):
 

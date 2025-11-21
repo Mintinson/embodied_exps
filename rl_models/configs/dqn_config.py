@@ -1,31 +1,20 @@
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, field
 
-import torch
+from rl_models.configs.common_config import CommonConfig
 
 
 @dataclass
 class QNetConfig:
-    hidden_sizes: tuple = (128, 128)
-    device: str = "cpu"  # or "cuda"
+    hidden_sizes: list[int] = field(default_factory=lambda: [128, 128])  # hidden layer sizes
+    activations: str | list[str] = "relu"  # activation functions for each hidden layer
 
 
 @dataclass
-class TrainDQNConfig:
+class DQNConfig(CommonConfig):
     """Configuration for DQN training."""
 
-    exp_name: str = "DQN_CartPole"
-    seed: int = 42
-    qnet_config: QNetConfig = QNetConfig()
-    batch_size: int = 64
-    n_episodes: int = 1000
-    gamma: float = 0.95
-    learning_rate: float = 1e-3
-    epsilon_start: float = 1.0
-    epsilon_decay: float = 0.995
-    epsilon_end: float = 0.01
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    env_name: str = "CartPole-v1"
-    buffer_size: int = 2000
-    stored_dir: str = "checkpoints/dqn"
-    ckpt_interval: int = 50
-    use_prioritized_replay: bool = True
+    exp_name: str = "DQN_CartPole"  # experiment name
+    env_name: str = "CartPole-v1"  # environment name
+    stored_dir: str = "checkpoints/dqn"  # directory to store checkpoints, logs, etc.
+    qnet_config: QNetConfig = field(default_factory=QNetConfig)  # Q-network configuration

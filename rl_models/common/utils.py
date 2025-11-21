@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 
@@ -17,3 +19,11 @@ def convert_to_tensor(
     if device is not None:
         tensor = tensor.to(device)
     return tensor
+
+def set_seeds(seed: int) -> None:
+    """Set random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

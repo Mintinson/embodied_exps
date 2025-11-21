@@ -1,4 +1,4 @@
-from .ddqn_config import TrainDDQNConfig
-from .dqn_config import TrainDQNConfig
+from .ddqn_config import DdoubleDQNConfig
+from .dqn_config import DQNConfig
 
-__all__ = ["TrainDQNConfig", "TrainDDQNConfig"]
+__all__ = ["DQNConfig", "DdoubleDQNConfig"]

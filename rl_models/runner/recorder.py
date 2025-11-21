@@ -12,20 +12,30 @@ from rl_models.common.logger import get_logger
 class Recorder:
     def __init__(self, config, is_training: bool) -> None:
         self.config = config
-        self.target_dir = Path(config.stored_dir) / datetime.datetime.now().strftime("%Y%m%d-%H%M")
-        self.target_dir.mkdir(parents=True, exist_ok=True)
-        with open(self.target_dir / "config.json", "w") as f:
-            json.dump(dataclasses.asdict(config), f, indent=4)
+        if is_training:
+            self.target_dir = Path(config.stored_dir) / datetime.datetime.now().strftime(
+                "%Y%m%d-%H%M"
+            )
+            self.config.stored_dir = str(self.target_dir)
+            self.target_dir.mkdir(parents=True, exist_ok=True)
+            with open(self.target_dir / "config.json", "w") as f:
+                json.dump(dataclasses.asdict(config), f, indent=4)
+        else:
+            self.target_dir = Path(config.stored_dir)
+            # self.target_dir = Path(config.stored_dir) / "evaluation"
         log_name = "training" if is_training else "evaluation"
         self.logger = get_logger(config.exp_name, self.target_dir / f"{log_name}.log")
         self.logger.info(f"Experiment configuration: {dataclasses.asdict(config)}")
 
     # def start_train(self) -> None:
 
-    def load_model(self, model, path: Path) -> dict:
-        model.load_state_dict(torch.load(path, map_location=torch.device("cpu")))
-        self.logger.info(f"Loaded model from {path}")
-        return model
+    def load_model(self, path: Path, is_full=False) -> dict:
+        if is_full:
+            target_path = path
+        else:
+            target_path = self.target_dir / path
+        self.logger.info(f"Loaded model from {target_path}")
+        return torch.load(target_path)
 
     def save_model(self, state_dict: dict, ckpt_path: str) -> None:
         full_path = self.target_dir / ckpt_path
@@ -53,3 +63,10 @@ class Recorder:
         plt.savefig(self.target_dir / "rewards.png")
         plt.legend()
         plt.show()
+
+    def save_gif(self, frames: Sequence) -> None:
+        import imageio
+
+        gif_path = self.target_dir / "best_episode.gif"
+        imageio.mimsave(gif_path, frames, fps=30)  # pyright: ignore[reportArgumentType, reportCallIssue]
+        self.logger.info(f"Saved GIF to {gif_path}")

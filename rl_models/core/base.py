@@ -46,6 +46,13 @@ class BaseAgent(ABC):
         """Load the agent's state."""
         pass
 
+    # @abstractmethod
+    def eval(self) -> None:
+        """Set the agent to evaluation mode."""
+        for module in self.__dict__.values():
+            if isinstance(module, torch.nn.Module):
+                module.eval()
+
 
 class BaseBuffer(ABC):
     """Abstract base class for Replay Buffers."""

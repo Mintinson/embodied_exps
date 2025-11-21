@@ -1,28 +1,15 @@
-import random
-
 import draccus
-import numpy as np
-import torch
 
 from rl_models.algorithms import DDQN
+from rl_models.common import set_seeds
 from rl_models.common.replay_buffer import PrioritizedReplayBuffer, ReplayBuffer
-from rl_models.configs import TrainDDQNConfig
+from rl_models.configs import DdoubleDQNConfig
 from rl_models.envs import make_env
 from rl_models.exploration import EpsilonGreedyStrategy
 from rl_models.runner.trainer import OffPolicyTrainer
 
-
-def set_seeds(seed: int) -> None:
-    """Set random seeds for reproducibility."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-
-
 if __name__ == "__main__":
-    config = draccus.parse(TrainDDQNConfig)
+    config = draccus.parse(DdoubleDQNConfig)
     set_seeds(config.seed)
 
     env = make_env(

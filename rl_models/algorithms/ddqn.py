@@ -4,10 +4,10 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn, optim
+from torch import optim
 
 from rl_models.common import convert_to_tensor
-from rl_models.configs.ddqn_config import TrainDDQNConfig
+from rl_models.configs.ddqn_config import DdoubleDQNConfig
 from rl_models.core.base import BaseAgent
 from rl_models.nets.mlp import build_mlp
 
@@ -17,11 +17,11 @@ class DDQN(BaseAgent):
         self,
         state_dim: int,
         action_dim: int,
-        config: TrainDDQNConfig,
+        config: DdoubleDQNConfig,
         criterion: Callable | None = None,
     ):
         super().__init__(config)
-        self.config: TrainDDQNConfig = config
+        self.config: DdoubleDQNConfig = config
         self.device = torch.device(config.device)
         self.gamma = config.gamma
         self.target_update_freq = config.update_target_freq
@@ -31,14 +31,14 @@ class DDQN(BaseAgent):
             input_dim=state_dim,
             output_dim=action_dim,
             hidden_dims=config.qnet_config.hidden_sizes,
-            activation=nn.ReLU,
+            activation=config.qnet_config.activations,
         ).to(self.device)
 
         self.target_qnet = build_mlp(
             input_dim=state_dim,
             output_dim=action_dim,
             hidden_dims=config.qnet_config.hidden_sizes,
-            activation=nn.ReLU,
+            activation=config.qnet_config.activations,
         ).to(self.device)
         self.target_qnet.load_state_dict(self.eval_qnet.state_dict())
 

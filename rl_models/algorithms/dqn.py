@@ -4,10 +4,10 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn, optim
+from torch import optim
 
 from rl_models.common import convert_to_tensor
-from rl_models.configs.dqn_config import TrainDQNConfig
+from rl_models.configs.dqn_config import DQNConfig
 from rl_models.core.base import BaseAgent
 from rl_models.nets.mlp import build_mlp
 
@@ -17,11 +17,11 @@ class DQN(BaseAgent):
         self,
         state_dim: int,
         action_dim: int,
-        config: TrainDQNConfig,
+        config: DQNConfig,
         criterion: Callable | None = None,
     ):
         super().__init__(config)
-        self.config: TrainDQNConfig = config
+        self.config: DQNConfig = config
         self.device = torch.device(config.device)
         self.gamma = config.gamma
 
@@ -29,7 +29,7 @@ class DQN(BaseAgent):
             input_dim=state_dim,
             output_dim=action_dim,
             hidden_dims=config.qnet_config.hidden_sizes,
-            activation=nn.ReLU,
+            activation=config.qnet_config.activations,
         ).to(self.device)
 
         self.optimizer = optim.Adam(self.qnet.parameters(), lr=config.learning_rate)
