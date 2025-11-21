@@ -28,7 +28,7 @@ class OffPolicyEvaluator:
         self.agent.load_state_dict(self.recorder.load_model(self.config.ckpt_path))
 
         # rewards = []
-        best_rewards = 0
+        best_rewards = float("-inf")
         best_frames = []
 
         for e in range(self.config.num_tests):

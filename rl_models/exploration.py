@@ -74,3 +74,32 @@ class GreedyStrategy(BaseExplorationStrategy):
     def update(self) -> None:
         """No-op for greedy strategy."""
         pass
+
+
+class GaussianNoiseStrategy(BaseExplorationStrategy):
+    """Gaussian noise exploration strategy for continuous action spaces."""
+
+    def __init__(
+        self,
+        action_dim: int,
+        max_action: float,
+        sigma: float = 0.1,
+    ):
+        self.action_dim = action_dim
+        self.max_action = max_action
+        self.sigma = sigma
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], np.ndarray],
+        env_action_space: Any,
+    ) -> np.ndarray:
+        """Select action and add Gaussian noise."""
+        action = action_selector(state)
+        noise = np.random.normal(0, self.sigma, size=self.action_dim)
+        return np.clip(action + noise, -self.max_action, self.max_action)
+
+    def update(self) -> None:
+        """No-op for Gaussian noise strategy."""
+        pass
