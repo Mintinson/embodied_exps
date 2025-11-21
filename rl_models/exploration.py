@@ -9,6 +9,23 @@ import torch
 from rl_models.core.base import BaseExplorationStrategy
 
 
+class DummyStrategy(BaseExplorationStrategy):
+    """Dummy exploration strategy that does nothing."""
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], int],
+        env_action_space: Any,
+    ) -> int:
+        """Select action using the provided action selector."""
+        return action_selector(state)
+
+    def update(self) -> None:
+        """No-op for dummy strategy."""
+        pass
+
+
 class EpsilonGreedyStrategy(BaseExplorationStrategy):
     """Epsilon-greedy exploration strategy with decay."""
 

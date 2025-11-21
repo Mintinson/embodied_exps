@@ -45,14 +45,18 @@ class OffPolicyEvaluator:
                 # Environment step
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
                 done = terminated or truncated
-                frames.append(self.env.render())
+                frame: np.ndarray = self.env.render()  # pyright: ignore[reportAssignmentType]
+                if frame.dtype != np.uint8:
+                    frame = 255 * (1.0 * frame - frame.min()) / (frame.max() - frame.min())
+                    frame = frame.astype(np.uint8)
+                frames.append(frame)
 
                 state = next_state
                 total_reward += float(reward)
 
-            self.recorder.logger.info(f"Episode: {e + 1}, Score: {total_reward:.2f}, ")
+            self.recorder.logger.info(f"Episode: {e + 1}, Score: {total_reward:.2f}.")
             if total_reward > best_rewards:
                 best_rewards = total_reward
                 best_frames = frames
-        self.recorder.logger.info(f"Evaluation finished. Best Score: {best_rewards:.2f}, ")
+        self.recorder.logger.info(f"Evaluation finished. Best Score: {best_rewards:.2f}.")
         self.recorder.save_gif(best_frames)

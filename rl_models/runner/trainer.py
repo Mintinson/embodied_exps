@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 from gymnasium import Env
@@ -17,12 +17,14 @@ class OffPolicyTrainer:
         buffer: BaseBuffer,
         exploration_strategy: BaseExplorationStrategy,
         config: Any,
+        custom_reward_fn: Callable[[float, bool], float] | None = None,
     ):
         self.agent = agent
         self.env = env
         self.buffer = buffer
         self.exploration_strategy = exploration_strategy
         self.config = config
+        self.custom_reward_fn = custom_reward_fn or (lambda r, d: r)
         self.recorder = Recorder(config, is_training=True)
 
     def train(self) -> None:
@@ -49,7 +51,8 @@ class OffPolicyTrainer:
                 done = terminated or truncated
 
                 # Custom reward shaping or casting
-                reward = float(reward) if not done else -10.0
+                reward = self.custom_reward_fn(float(reward), done)
+
                 next_state = np.array(next_state, dtype=np.float32)
                 if isinstance(next_state, tuple):
                     next_state = next_state[0]

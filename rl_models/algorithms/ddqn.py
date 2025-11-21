@@ -1,5 +1,4 @@
-from collections.abc import Callable
-from typing import Any, Protocol
+from typing import Any
 
 import numpy as np
 import torch
@@ -64,7 +63,7 @@ class DDQN(BaseAgent):
             is_weight = convert_to_tensor(is_weight, device=self.device)
         else:  #  ReplayBuffer
             states, actions, rewards, next_states, dones = batch
-            is_weight = torch.ones_like(rewards)
+            is_weight = 1.0
 
         states = convert_to_tensor(states, device=self.device)
         actions = convert_to_tensor(actions, torch.int64, device=self.device)

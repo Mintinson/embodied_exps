@@ -38,6 +38,7 @@ if __name__ == "__main__":
         buffer=buffer,
         exploration_strategy=exploration_strategy,
         config=config,
+        custom_reward_fn=lambda r, d: -10.0 if d else r,
     )
 
     trainer.train()
