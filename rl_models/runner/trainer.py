@@ -66,15 +66,13 @@ class OffPolicyTrainer:
                 step += 1
 
                 # Update agent
-                if len(self.buffer) >= self.config.batch_size:
-                    batch = self.buffer.sample(self.config.batch_size)
-                    metrics = self.agent.update(batch)
+                if self.config.is_learn_per_step:
+                    if step % self.config.learn_per_unit == 0:
+                        self._replay_learn()
 
-                    # Handle prioritized replay updates if needed
-                    if "td_errors" in metrics and hasattr(self.buffer, "update_priorities"):
-                        if isinstance(batch, tuple) and len(batch) > 5:
-                            indices = batch[5]
-                            self.buffer.update_priorities(indices, metrics["td_errors"])
+            if not self.config.is_learn_per_step:
+                if (e + 1) % self.config.learn_per_unit == 0:
+                    self._replay_learn()
 
             # End of episode
             self.exploration_strategy.update()
@@ -96,3 +94,14 @@ class OffPolicyTrainer:
         self.recorder.logger.info("Training finished.")
         self.recorder.save_model(self.agent.state_dict(), "model_last.pth")
         self.recorder.plot_rewards(rewards)
+
+    def _replay_learn(self):
+        if len(self.buffer) >= self.config.batch_size:
+            batch = self.buffer.sample(self.config.batch_size)
+            metrics = self.agent.update(batch)
+
+            # Handle prioritized replay updates if needed
+            if "td_errors" in metrics and hasattr(self.buffer, "update_priorities"):
+                if isinstance(batch, tuple) and len(batch) > 5:
+                    indices = batch[5]
+                    self.buffer.update_priorities(indices, metrics["td_errors"])

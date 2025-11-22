@@ -31,3 +31,6 @@ class CommonConfig:
 
     ckpt_path: str = "model_last.pth"  # checkpoint path for evaluation
     num_tests: int = 50  # number of test episodes
+
+    is_learn_per_step: bool = True  # learn the agent per step
+    learn_per_unit: int = 1  # learning frequency per unit

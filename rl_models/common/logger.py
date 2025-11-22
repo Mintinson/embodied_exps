@@ -15,7 +15,6 @@ def get_logger(logger_name: str, log_file: PathLike | None) -> logging.Logger:
 
     console_handler.setFormatter(formatter)
 
-    # 5. 加入 handler
     logger.addHandler(console_handler)
 
     if log_file is not None:

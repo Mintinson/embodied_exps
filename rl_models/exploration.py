@@ -58,6 +58,43 @@ class EpsilonGreedyStrategy(BaseExplorationStrategy):
         """Get current epsilon value."""
         return self.epsilon
 
+class LinearDecayEpsilonGreedyStrategy(BaseExplorationStrategy):
+    """Epsilon-greedy exploration strategy with linear decay."""
+
+    def __init__(
+        self,
+        epsilon_start: float = 1.0,
+        epsilon_end: float = 0.01,
+        decay_steps: int = 10000,
+    ):
+        self.epsilon_start = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.decay_steps = decay_steps
+        self.epsilon = epsilon_start
+        self.step_count = 0
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], int],
+        env_action_space: Any,
+    ) -> int:
+        """Select action using epsilon-greedy strategy."""
+        if np.random.rand() < self.epsilon:
+            return env_action_space.sample()
+        return action_selector(state)
+
+    def update(self) -> None:
+        """Linearly decay epsilon."""
+        self.step_count += 1
+        decay_amount = (self.epsilon_start - self.epsilon_end) / self.decay_steps
+        self.epsilon = max(
+            self.epsilon_end,
+            self.epsilon_start - decay_amount * self.step_count,
+        )
+
+    def get_epsilon(self) -> float:
+        return self.epsilon
 
 class GreedyStrategy(BaseExplorationStrategy):
     """Pure greedy strategy (no exploration)."""
@@ -102,4 +139,142 @@ class GaussianNoiseStrategy(BaseExplorationStrategy):
 
     def update(self) -> None:
         """No-op for Gaussian noise strategy."""
+        pass
+class InverseTimeDecayStrategy(BaseExplorationStrategy):
+    """
+    Epsilon-greedy with inverse time decay.
+    Formula: epsilon = epsilon_start / (1 + decay_rate * step)
+    This often provides a better balance for convergence in theoretical settings.
+    """
+
+    def __init__(
+        self,
+        epsilon_start: float = 1.0,
+        epsilon_end: float = 0.01,
+        decay_rate: float = 0.001,
+    ):
+        self.epsilon_start = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.decay_rate = decay_rate
+        self.step_count = 0
+        self.epsilon = epsilon_start
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], int],
+        env_action_space: Any,
+    ) -> int:
+        if np.random.rand() < self.epsilon:
+            return env_action_space.sample()
+        return action_selector(state)
+
+    def update(self) -> None:
+        self.step_count += 1
+        decayed_epsilon = self.epsilon_start / (1 + self.decay_rate * self.step_count)
+        self.epsilon = max(self.epsilon_end, decayed_epsilon)
+
+    def get_epsilon(self) -> float:
+        return self.epsilon
+
+
+class CyclicalEpsilonGreedyStrategy(BaseExplorationStrategy):
+    """
+    Epsilon-greedy with cyclical decay (Triangular schedule).
+    Useful for escaping local optima by periodically increasing exploration.
+    """
+
+    def __init__(
+        self,
+        epsilon_max: float = 1.0,
+        epsilon_min: float = 0.01,
+        cycle_steps: int = 10000,
+    ):
+        self.epsilon_max = epsilon_max
+        self.epsilon_min = epsilon_min
+        self.cycle_steps = cycle_steps
+        self.step_count = 0
+        self.epsilon = epsilon_max
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], int],
+        env_action_space: Any,
+    ) -> int:
+        if np.random.rand() < self.epsilon:
+            return env_action_space.sample()
+        return action_selector(state)
+
+    def update(self) -> None:
+        self.step_count += 1
+        # Calculate position in the cycle [0, 1]
+        cycle_progress = (self.step_count % self.cycle_steps) / self.cycle_steps
+
+        if cycle_progress < 0.5:
+            # Decay phase (1.0 -> 0.01)
+            factor = 1.0 - (cycle_progress * 2)
+        else:
+            # Rise phase (0.01 -> 1.0)
+            factor = (cycle_progress - 0.5) * 2
+
+        self.epsilon = self.epsilon_min + (self.epsilon_max - self.epsilon_min) * factor
+
+    def get_epsilon(self) -> float:
+        return self.epsilon
+
+
+class OrnsteinUhlenbeckNoiseStrategy(BaseExplorationStrategy):
+    """
+    Ornstein-Uhlenbeck process for temporally correlated noise.
+    Essential for continuous control tasks (e.g., DDPG, TD3) where
+    momentum in exploration is desired.
+    """
+
+    def __init__(
+        self,
+        action_dim: int,
+        max_action: float,
+        theta: float = 0.15,
+        sigma: float = 0.2,
+        dt: float = 1e-2,
+        initial_noise: np.ndarray | None = None,
+    ):
+        self.action_dim = action_dim
+        self.max_action = max_action
+        self.theta = theta
+        self.sigma = sigma
+        self.dt = dt
+        self.initial_noise = initial_noise
+        self.noise = np.zeros(self.action_dim)
+        self.reset()
+
+    def reset(self) -> None:
+        """Reset the internal state of the noise."""
+        if self.initial_noise is not None:
+            self.noise = self.initial_noise
+        else:
+            self.noise = np.zeros(self.action_dim)
+
+    def select_action(
+        self,
+        state: torch.Tensor,
+        action_selector: Callable[[torch.Tensor], np.ndarray],
+        env_action_space: Any,
+    ) -> np.ndarray:
+        """Select action and add OU noise."""
+        action = action_selector(state)
+
+        # Calculate OU noise
+        noise = (
+            self.noise
+            + self.theta * (0 - self.noise) * self.dt
+            + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.action_dim)
+        )
+        self.noise = noise
+
+        return np.clip(action + noise, -self.max_action, self.max_action)
+
+    def update(self) -> None:
+        """No-op for OU noise, but could implement sigma decay here if needed."""
         pass
