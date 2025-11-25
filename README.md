@@ -14,11 +14,14 @@
 
 ## 安装
 
-本项目使用 `uv` 进行依赖管理：
+本项目使用 [uv](https://uv.doczh.com/getting-started/installation/) 进行依赖管理：
 
 ```bash
 # 如果尚未安装 uv，先安装
+# Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 # 安装依赖
 uv sync
@@ -39,6 +42,10 @@ conda activate embodied-exps
 ```bash
 pip install -r requirements.txt
 ```
+
+> **注意**：
+> * 如果环境为 Windows，安装 `pybullet-envs-gymnasium` 之前需要安装 `Visual Studio Building Tools`。见 [Visual Studio & VS Code Downloads for Windows, Mac, Linux](https://visualstudio.microsoft.com/downloads/?q=build+tools)。
+> * 由于实验需要的环境比较简单，计算量不大，该项目目前没有安装 CUDA 版本的 pytorch。如果想要安装，请根据自身硬件安装对应版本，见 [PyTorch: Get Started](https://pytorch.org/get-started/locally/)。
 
 ## 快速开始
 
@@ -88,6 +95,9 @@ uv run scripts/test_td3.py --config_path checkpoints/td3/<timestamp>/config.json
 ```
 rl_models/
 ├── core/
+    |-- explorations/
+        |-- exploration_cfgs.py   # 探索策略对应配置文件
+        |-- exploration           # 探索策略（Epsilon-Greedy, Gaussian Noise 等）
 │   └── base.py                   # 抽象基类（BaseAgent, BaseBuffer, BaseExplorationStrategy）
 ├── algorithms/
 │   ├── dqn.py                    # DQN 实现
@@ -109,11 +119,11 @@ rl_models/
 │   ├── dqn_models.py             # DQN 网络架构
 │   ├── dqpg_models.py            # DDPG/TD3 网络架构
 │   └── mlp.py                    # 通用 MLP 构建器
-├── runner/
-│   ├── trainer.py                # 通用离策略训练器
-│   ├── evaluator.py              # 模型评估器
-│   └── recorder.py               # 日志记录和模型保存
-└── exploration.py                # 探索策略（Epsilon-Greedy, Gaussian Noise 等）
+└── runner/
+    ├── trainer.py                # 通用离策略训练器
+    ├── evaluator.py              # 模型评估器
+    └── recorder.py               # 日志记录和模型保存
+
 
 scripts/
 ├── train_dqn.py                  # DQN 训练脚本
@@ -265,8 +275,11 @@ uv run ruff check . --fix
 所有训练参数可以通过以下方式配置：
 
 1. **命令行参数**: `uv run script.py --n_episodes 2000 --gamma 0.99`
+2. **查看可选的命令行参数**：`uv run script.py --help`
 3. **配置文件**： `uv run script.py --config_path your_cfg.json` 也可以是 `.yaml` 文件  
 2. **Python dataclass**: 在 `rl_models/configs/` 中修改对应的配置类
+
+关于如何更改和使用配置文件，请查看 [Draccus](https://github.com/marin-community/draccus) 的文档。
 
 配置示例（DQN）：
 

@@ -5,7 +5,6 @@ from rl_models.common import set_seeds
 from rl_models.common.replay_buffer import PrioritizedReplayBuffer, ReplayBuffer
 from rl_models.configs import DQNConfig
 from rl_models.envs import make_env
-from rl_models.exploration import EpsilonGreedyStrategy
 from rl_models.runner.trainer import OffPolicyTrainer
 
 if __name__ == "__main__":
@@ -26,17 +25,10 @@ if __name__ == "__main__":
     else:
         buffer = ReplayBuffer(max_size=config.buffer_size)
 
-    exploration_strategy = EpsilonGreedyStrategy(
-        epsilon_start=config.epsilon_start,
-        epsilon_end=config.epsilon_end,
-        epsilon_decay=config.epsilon_decay,
-    )
-
     trainer = OffPolicyTrainer(
         agent=agent,
         env=env,
         buffer=buffer,
-        exploration_strategy=exploration_strategy,
         config=config,
         custom_reward_fn=lambda r, d: -10.0 if d else r,
     )

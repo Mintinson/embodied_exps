@@ -5,7 +5,6 @@ from rl_models.common.replay_buffer import PrioritizedReplayBuffer, ReplayBuffer
 from rl_models.common.utils import set_seeds
 from rl_models.configs.td3_config import TD3Config
 from rl_models.envs import make_env
-from rl_models.exploration import GaussianNoiseStrategy
 from rl_models.runner.trainer import OffPolicyTrainer
 
 if __name__ == "__main__":
@@ -27,17 +26,10 @@ if __name__ == "__main__":
     else:
         buffer = ReplayBuffer(max_size=config.buffer_size)
 
-    exploration_strategy = GaussianNoiseStrategy(
-        action_dim=action_dim,
-        max_action=max_action,
-        sigma=config.exploration_noise,
-    )
-
     trainer = OffPolicyTrainer(
         agent=agent,
         env=env,
         buffer=buffer,
-        exploration_strategy=exploration_strategy,
         config=config,
         custom_reward_fn=lambda r, d: -10.0 if d else r,
     )

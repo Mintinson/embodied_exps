@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import torch
+
+from rl_models.core.explorations.exploration_cfgs import ExplorationConfig, ExponentGreedyConfig
 
 
 @dataclass
@@ -34,3 +36,5 @@ class CommonConfig:
 
     is_learn_per_step: bool = True  # learn the agent per step
     learn_per_unit: int = 1  # learning frequency per unit
+
+    exploration_config: ExplorationConfig = field(default_factory=ExponentGreedyConfig)

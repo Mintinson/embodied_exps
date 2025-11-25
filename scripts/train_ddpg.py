@@ -5,7 +5,6 @@ from rl_models.common import set_seeds
 from rl_models.common.replay_buffer import PrioritizedReplayBuffer, ReplayBuffer
 from rl_models.configs import DDPGConfig
 from rl_models.envs import make_env
-from rl_models.exploration import DummyStrategy
 from rl_models.runner.trainer import OffPolicyTrainer
 
 if __name__ == "__main__":
@@ -27,15 +26,14 @@ if __name__ == "__main__":
     else:
         buffer = ReplayBuffer(max_size=config.buffer_size)
 
-    exploration_strategy = DummyStrategy()
-
+    def custom_reward_fn(r, d):
+        return -10.0 if d else r
     trainer = OffPolicyTrainer(
         agent=agent,
         env=env,
         buffer=buffer,
-        exploration_strategy=exploration_strategy,
         config=config,
-        custom_reward_fn=lambda r, d: -10.0 if d else r,
+        custom_reward_fn=custom_reward_fn,
     )
 
     trainer.train()

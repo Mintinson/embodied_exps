@@ -1,6 +1,9 @@
-"""Exploration strategies for RL agents."""
+"""Exploration strategies for RL agents.
 
-from collections.abc import Callable
+TODO: Move this file to a more appropriate location.
+"""
+
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import numpy as np
@@ -26,7 +29,7 @@ class DummyStrategy(BaseExplorationStrategy):
         pass
 
 
-class EpsilonGreedyStrategy(BaseExplorationStrategy):
+class ExponentGreedyStrategy(BaseExplorationStrategy):
     """Epsilon-greedy exploration strategy with decay."""
 
     def __init__(
@@ -42,9 +45,9 @@ class EpsilonGreedyStrategy(BaseExplorationStrategy):
     def select_action(
         self,
         state: torch.Tensor,
-        action_selector: Callable[[torch.Tensor], int],
+        action_selector: Callable[[torch.Tensor], Any],
         env_action_space: Any,
-    ) -> int:
+    ) -> Any:
         """Select action using epsilon-greedy strategy."""
         if np.random.rand() < self.epsilon:
             return env_action_space.sample()
@@ -57,6 +60,7 @@ class EpsilonGreedyStrategy(BaseExplorationStrategy):
     def get_epsilon(self) -> float:
         """Get current epsilon value."""
         return self.epsilon
+
 
 class LinearDecayEpsilonGreedyStrategy(BaseExplorationStrategy):
     """Epsilon-greedy exploration strategy with linear decay."""
@@ -96,6 +100,7 @@ class LinearDecayEpsilonGreedyStrategy(BaseExplorationStrategy):
     def get_epsilon(self) -> float:
         return self.epsilon
 
+
 class GreedyStrategy(BaseExplorationStrategy):
     """Pure greedy strategy (no exploration)."""
 
@@ -118,12 +123,8 @@ class GaussianNoiseStrategy(BaseExplorationStrategy):
 
     def __init__(
         self,
-        action_dim: int,
-        max_action: float,
         sigma: float = 0.1,
     ):
-        self.action_dim = action_dim
-        self.max_action = max_action
         self.sigma = sigma
 
     def select_action(
@@ -133,13 +134,19 @@ class GaussianNoiseStrategy(BaseExplorationStrategy):
         env_action_space: Any,
     ) -> np.ndarray:
         """Select action and add Gaussian noise."""
+        action_dim = env_action_space.shape[0]
+        max_action = np.max(np.abs(env_action_space.high))
+        min_action = np.min(env_action_space.low)
+        # min_ac
         action = action_selector(state)
-        noise = np.random.normal(0, self.sigma, size=self.action_dim)
-        return np.clip(action + noise, -self.max_action, self.max_action)
+        noise = np.random.normal(0, self.sigma, size=action_dim)
+        return np.clip(action + noise, min_action, max_action)
 
     def update(self) -> None:
         """No-op for Gaussian noise strategy."""
         pass
+
+
 class InverseTimeDecayStrategy(BaseExplorationStrategy):
     """
     Epsilon-greedy with inverse time decay.
@@ -233,28 +240,21 @@ class OrnsteinUhlenbeckNoiseStrategy(BaseExplorationStrategy):
 
     def __init__(
         self,
-        action_dim: int,
-        max_action: float,
         theta: float = 0.15,
         sigma: float = 0.2,
         dt: float = 1e-2,
-        initial_noise: np.ndarray | None = None,
+        initial_noise: Sequence[float] | None = None,
     ):
-        self.action_dim = action_dim
-        self.max_action = max_action
+        # self.action_dim = action_dim
+        # self.max_action = max_action
         self.theta = theta
         self.sigma = sigma
         self.dt = dt
         self.initial_noise = initial_noise
-        self.noise = np.zeros(self.action_dim)
-        self.reset()
 
-    def reset(self) -> None:
-        """Reset the internal state of the noise."""
-        if self.initial_noise is not None:
-            self.noise = self.initial_noise
-        else:
-            self.noise = np.zeros(self.action_dim)
+        self.noise = np.zeros(1)
+        # self.noise = np.zeros(self.action_dim)
+        # self.reset()
 
     def select_action(
         self,
@@ -265,15 +265,17 @@ class OrnsteinUhlenbeckNoiseStrategy(BaseExplorationStrategy):
         """Select action and add OU noise."""
         action = action_selector(state)
 
-        # Calculate OU noise
+        action_dim = env_action_space.shape[0]
+        max_action = env_action_space.high
+        min_action = env_action_space.low
         noise = (
             self.noise
             + self.theta * (0 - self.noise) * self.dt
-            + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.action_dim)
+            + self.sigma * np.sqrt(self.dt) * np.random.normal(size=action_dim)
         )
         self.noise = noise
 
-        return np.clip(action + noise, -self.max_action, self.max_action)
+        return np.clip(action + noise, min_action, max_action)
 
     def update(self) -> None:
         """No-op for OU noise, but could implement sigma decay here if needed."""

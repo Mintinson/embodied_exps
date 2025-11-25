@@ -5,6 +5,7 @@ import numpy as np
 from gymnasium import Env
 
 from rl_models.core.base import BaseAgent, BaseBuffer, BaseExplorationStrategy
+from rl_models.core.explorations.exploration_cfgs import EXPLORATION_MAP, ExplorationConfig
 from rl_models.runner.recorder import Recorder
 
 
@@ -16,15 +17,21 @@ class OffPolicyTrainer:
         agent: BaseAgent,
         env: Env,
         buffer: BaseBuffer,
-        exploration_strategy: BaseExplorationStrategy,
         config: Any,
         custom_reward_fn: Callable[[float, bool], float] | None = None,
     ):
+        self.config = config
         self.agent = agent
         self.env = env
         self.buffer = buffer
-        self.exploration_strategy = exploration_strategy
-        self.config = config
+
+        StrategyClass = EXPLORATION_MAP[
+            ExplorationConfig.get_choice_name(type(config.exploration_config))
+        ].strategy_class
+
+        self.exploration_strategy: BaseExplorationStrategy = StrategyClass(
+            **vars(config.exploration_config)
+        )
         self.custom_reward_fn = custom_reward_fn or (lambda r, d: r)
         self.recorder = Recorder(config, is_training=True)
 

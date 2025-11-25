@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 
 from rl_models.configs.common_config import CommonConfig
+from rl_models.core.explorations.exploration_cfgs import (
+    ExplorationConfig,
+    GaussianNoiseConfig,
+)
 
 
 @dataclass
@@ -41,3 +45,6 @@ class TD3Config(CommonConfig):
     )  # critic network configuration
     actor_config: ActorConfig = field(default_factory=ActorConfig)  # actor network configuration
     num_tests: int = 5  # number of test episodes
+    exploration_config: ExplorationConfig = field(
+        default_factory=GaussianNoiseConfig
+    )  # exploration strategy configuration
