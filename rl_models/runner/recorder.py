@@ -4,6 +4,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+import draccus
 import torch
 
 from rl_models.common.logger import get_logger
@@ -18,8 +19,9 @@ class Recorder:
             )
             self.config.stored_dir = str(self.target_dir)
             self.target_dir.mkdir(parents=True, exist_ok=True)
+            cfg_dict = draccus.encode(config)
             with open(self.target_dir / "config.json", "w") as f:
-                json.dump(dataclasses.asdict(config), f, indent=4)
+                json.dump(cfg_dict, f, indent=4)
         else:
             self.target_dir = Path(config.stored_dir)
             # self.target_dir = Path(config.stored_dir) / "evaluation"

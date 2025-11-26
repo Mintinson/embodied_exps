@@ -6,7 +6,6 @@ from rl_models.algorithms.dqn import DQN
 from rl_models.algorithms.td3 import TD3
 from rl_models.common.replay_buffer import PrioritizedReplayBuffer, ReplayBuffer
 from rl_models.core.base import BaseAgent, BaseBuffer, BaseExplorationStrategy
-from rl_models.exploration import EpsilonGreedyStrategy, GaussianNoiseStrategy
 from rl_models.runner.trainer import OffPolicyTrainer
 
 __all__ = [
@@ -19,7 +18,5 @@ __all__ = [
     "TD3",
     "ReplayBuffer",
     "PrioritizedReplayBuffer",
-    "EpsilonGreedyStrategy",
-    "GaussianNoiseStrategy",
     "OffPolicyTrainer",
 ]

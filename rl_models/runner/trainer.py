@@ -1,11 +1,12 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from gymnasium import Env
 
 from rl_models.core.base import BaseAgent, BaseBuffer, BaseExplorationStrategy
 from rl_models.core.explorations.exploration_cfgs import EXPLORATION_MAP, ExplorationConfig
+from rl_models.envs import SubprocVecEnv
 from rl_models.runner.recorder import Recorder
 
 
@@ -15,7 +16,7 @@ class OffPolicyTrainer:
     def __init__(
         self,
         agent: BaseAgent,
-        env: Env,
+        env: Env | SubprocVecEnv,
         buffer: BaseBuffer,
         config: Any,
         custom_reward_fn: Callable[[float, bool], float] | None = None,
@@ -37,8 +38,15 @@ class OffPolicyTrainer:
 
     def train(self) -> None:
         """Execute the training loop."""
-        self.recorder.logger.info(f"Starting training {self.config.env_name}")
+        if hasattr(self.env, "num_envs"):
+            self.parallel_train()
+        else:
+            self.sequential_train()
 
+    def sequential_train(self) -> None:
+        assert not hasattr(self.env, "num_envs"), "Use parallel_train for vectorized environments."
+        self.recorder.logger.info(f"Starting training {self.config.env_name}")
+        self.env = cast(Env, self.env)
         rewards = []
         for e in range(self.config.n_episodes):
             episode_seed = self.config.seed + e
@@ -101,6 +109,72 @@ class OffPolicyTrainer:
         self.recorder.logger.info("Training finished.")
         self.recorder.save_model(self.agent.state_dict(), "model_last.pth")
         self.recorder.plot_rewards(rewards)
+
+    def parallel_train(self) -> None:
+        assert hasattr(self.env, "num_envs"), "The environment must support parallel execution."
+        self.recorder.logger.info(f"Starting parallel training {self.config.env_name}")
+
+        self.env = cast(SubprocVecEnv, self.env)
+
+        num_envs = self.env.num_envs
+
+        all_rewards = []
+        episode_rewards = [0.0] * num_envs
+        total_episodes = 0
+        # for e in range(self.config.n_episodes):
+        seeds = [self.config.seed + total_episodes + i for i in range(num_envs)]
+        states, _ = self.env.reset(seeds=seeds)
+
+        while total_episodes < self.config.n_episodes:
+            actions = []
+            for state in states:
+                action = self.exploration_strategy.select_action(
+                    state, self.agent.act, self.env.action_space
+                )
+                actions.append(action)
+            next_states, rewards, terminateds, truncateds, _ = self.env.step(actions)
+
+            for i in range(num_envs):
+                done = terminateds[i] or truncateds[i]
+                reward = self.custom_reward_fn(float(rewards[i]), terminateds[i] or truncateds[i])
+                self.buffer.add(states[i], actions[i], reward, next_states[i], done)
+                episode_rewards[i] += reward
+
+                if done:
+                    self.recorder.logger.info(
+                        f"Env: {i},"
+                        f"Episode: {total_episodes + 1}/{self.config.n_episodes}, "
+                        f"Score: {episode_rewards[i]:.2f}, "
+                        f"Epsilon: {self.exploration_strategy.get_epsilon():.3f}"
+                    )
+                    all_rewards.append(episode_rewards[i])
+                    episode_rewards[i] = 0.0
+                    total_episodes += 1
+
+                    # episode_
+
+            # if not self.config.is_learn_per_step:
+            # if (e + 1) % self.config.learn_per_unit == 0:
+            self._replay_learn()
+
+            # End of episode
+            self.exploration_strategy.update()
+
+            # Checkpointing
+            if (
+                hasattr(self.config, "ckpt_interval")
+                and (total_episodes + 1) % self.config.ckpt_interval == 0
+                and (total_episodes + 1) % num_envs == 0
+            ):
+                self.recorder.save_model(
+                    self.agent.state_dict(), f"model_ep{total_episodes + 1}.pth"
+                )
+
+        # self.recorder.save_model(self.agent)
+
+        self.recorder.logger.info("Training finished.")
+        self.recorder.save_model(self.agent.state_dict(), "model_last.pth")
+        self.recorder.plot_rewards(all_rewards)
 
     def _replay_learn(self):
         if len(self.buffer) >= self.config.batch_size:

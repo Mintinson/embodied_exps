@@ -27,7 +27,7 @@ class TD3Config(CommonConfig):
     env_name: str = "AntBulletEnv-v0"  # environment name
     stored_dir: str = "checkpoints/td3"  # directory to store checkpoints, logs, etc.
     buffer_size: int = 1_000_000  # replay buffer size
-    n_episodes: int = 50  # number of training episodes
+    n_episodes: int = 1000  # number of training episodes
     use_prioritized_replay: bool = False  # whether to use prioritized experience replay
     tau: float = 0.005  # target network update rate
     actor_learning_rate: float = 1e-3  # learning rate for the actor network

@@ -245,16 +245,12 @@ class OrnsteinUhlenbeckNoiseStrategy(BaseExplorationStrategy):
         dt: float = 1e-2,
         initial_noise: Sequence[float] | None = None,
     ):
-        # self.action_dim = action_dim
-        # self.max_action = max_action
         self.theta = theta
         self.sigma = sigma
         self.dt = dt
         self.initial_noise = initial_noise
 
         self.noise = np.zeros(1)
-        # self.noise = np.zeros(self.action_dim)
-        # self.reset()
 
     def select_action(
         self,
